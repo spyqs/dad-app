@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF to Black & White Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .info-box {
+            background: #f0f8ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 5px;
+        }
+
+        .info-box h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .info-box p {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .upload-area {
+            border: 3px dashed #ddd;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: #fafafa;
+            position: relative;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f5f5ff;
+        }
+
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background: #f0f0ff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .upload-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .upload-button:hover {
+            transform: translateY(-2px);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .processing {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .progress-text {
+            color: #666;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .result {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .success-icon {
+            font-size: 48px;
+            color: #4caf50;
+            margin-bottom: 15px;
+        }
+
+        .download-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 10px;
+        }
+
+        .download-button {
+            background: #4caf50;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .download-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .reset-button {
+            background: #666;
+            color: white;
+            padding: 10px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: transform 0.2s;
+        }
+
+        .reset-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .error {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .error-icon {
+            font-size: 48px;
+            color: #d32f2f;
+            margin-bottom: 15px;
+        }
+
+        .error-message {
+            color: #d32f2f;
+            margin-bottom: 20px;
+        }
+
+        .canvas-container {
+            display: none;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 10px;
+            background: #f9f9f9;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 10px auto;
+            border: 1px solid #ddd;
+            background: white;
+        }
+
+        .file-info {
+            background: #e8f4ea;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📄 PDF Converter</h1>
+        <p class="subtitle">Convert color PDF scans to black & white</p>
+        
+        <div class="info-box">
+            <h3>ℹ️ How this works:</h3>
+            <p>This converter processes your PDF entirely in your browser using Canvas API. Your files never leave your computer - everything happens locally for maximum privacy and speed.</p>
+        </div>
+
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📤</div>
+            <p class="upload-text">Drop your PDF here</p>
+            <p style="color: #999; margin: 10px 0;">or</p>
+            <button class="upload-button">Choose PDF File</button>
+            <input type="file" id="fileInput" accept="application/pdf">
+        </div>
+
+        <div class="processing" id="processing">
+            <div class="spinner"></div>
+            <p>Processing your PDF...</p>
+            <p class="progress-text" id="progressText">Initializing...</p>
+        </div>
+
+        <div class="result" id="result">
+            <div class="success-icon">✅</div>
+            <h3>Conversion Complete!</h3>
+            <div class="file-info" id="fileInfo"></div>
+            
+            <div class="download-section">
+                <p>Your black & white PDF is ready:</p>
+                <button class="download-button" id="downloadButton">⬇️ Download Converted PDF</button>
+            </div>
+            
+            <div class="canvas-container" id="canvasContainer"></div>
+            
+            <button class="reset-button" onclick="resetConverter()">Convert Another PDF</button>
+        </div>
+
+        <div class="error" id="error">
+            <div class="error-icon">⚠️</div>
+            <p class="error-message" id="errorMessage">An error occurred while processing your PDF.</p>
+            <button class="reset-button" onclick="resetConverter()">Try Again</button>
+        </div>
+    </div>
+
+    <!-- Load PDF.js from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        // Set worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const processing = document.getElementById('processing');
+        const result = document.getElementById('result');
+        const error = document.getElementById('error');
+        const errorMessage = document.getElementById('errorMessage');
+        const progressText = document.getElementById('progressText');
+        const downloadButton = document.getElementById('downloadButton');
+        const canvasContainer = document.getElementById('canvasContainer');
+        const fileInfo = document.getElementById('fileInfo');
+
+        let processedImages = [];
+        let originalFileName = '';
+
+        // Click to upload
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file && file.type === 'application/pdf') {
+                originalFileName = file.name;
+                processPDF(file);
+            } else if (file) {
+                showError('Please select a PDF file.');
+            }
+        });
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const file = e.dataTransfer.files[0];
+            if (file && file.type === 'application/pdf') {
+                originalFileName = file.name;
+                processPDF(file);
+            } else if (file) {
+                showError('Please drop a PDF file.');
+            }
+        });
+
+        async function processPDF(file) {
+            uploadArea.style.display = 'none';
+            processing.style.display = 'block';
+            error.style.display = 'none';
+            result.style.display = 'none';
+            canvasContainer.innerHTML = '';
+            processedImages = [];
+
+            try {
+                progressText.textContent = 'Loading PDF...';
+                
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+                
+                const numPages = pdf.numPages;
+                fileInfo.textContent = `Original file: ${file.name} (${numPages} page${numPages > 1 ? 's' : ''})`;
+                
+                progressText.textContent = `Processing ${numPages} page${numPages > 1 ? 's' : ''}...`;
+
+                // Process each page
+                for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+                    progressText.textContent = `Processing page ${pageNum} of ${numPages}...`;
+                    
+                    const page = await pdf.getPage(pageNum);
+                    const viewport = page.getViewport({ scale: 2 });
+                    
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+                    
+                    await page.render({
+                        canvasContext: context,
+                        viewport: viewport
+                    }).promise;
+                    
+                    // Convert to black and white
+                    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                    const data = imageData.data;
+                    
+                    for (let i = 0; i < data.length; i += 4) {
+                        const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+                        const bw = gray > 180 ? 255 : 0; // Adjust threshold for better results
+                        data[i] = bw;
+                        data[i + 1] = bw;
+                        data[i + 2] = bw;
+                    }
+                    
+                    context.putImageData(imageData, 0, 0);
+                    
+                    // Store processed canvas
+                    processedImages.push({
+                        canvas: canvas,
+                        width: viewport.width,
+                        height: viewport.height
+                    });
+                    
+                    // Add preview
+                    const previewCanvas = canvas.cloneNode();
+                    previewCanvas.width = canvas.width / 4;
+                    previewCanvas.height = canvas.height / 4;
+                    const previewContext = previewCanvas.getContext('2d');
+                    previewContext.drawImage(canvas, 0, 0, previewCanvas.width, previewCanvas.height);
+                    canvasContainer.appendChild(previewCanvas);
+                }
+
+                progressText.textContent = 'Creating PDF...';
+                
+                // Create PDF with jsPDF
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({
+                    orientation: processedImages[0].width > processedImages[0].height ? 'landscape' : 'portrait',
+                    unit: 'pt',
+                    format: [processedImages[0].width * 0.75, processedImages[0].height * 0.75]
+                });
+
+                for (let i = 0; i < processedImages.length; i++) {
+                    if (i > 0) {
+                        doc.addPage([processedImages[i].width * 0.75, processedImages[i].height * 0.75]);
+                    }
+                    
+                    const imgData = processedImages[i].canvas.toDataURL('image/jpeg', 0.95);
+                    doc.addImage(imgData, 'JPEG', 0, 0, processedImages[i].width * 0.75, processedImages[i].height * 0.75);
+                }
+
+                // Setup download
+                downloadButton.onclick = () => {
+                    const fileName = originalFileName.replace('.pdf', '_bw.pdf');
+                    doc.save(fileName);
+                };
+
+                processing.style.display = 'none';
+                result.style.display = 'block';
+                
+                if (numPages <= 3) {
+                    canvasContainer.style.display = 'block';
+                }
+
+            } catch (err) {
+                console.error('Error:', err);
+                showError(`Failed to process PDF: ${err.message}`);
+            }
+        }
+
+        function showError(message) {
+            uploadArea.style.display = 'none';
+            processing.style.display = 'none';
+            result.style.display = 'none';
+            error.style.display = 'block';
+            errorMessage.textContent = message;
+        }
+
+        function resetConverter() {
+            uploadArea.style.display = 'block';
+            processing.style.display = 'none';
+            result.style.display = 'none';
+            error.style.display = 'none';
+            canvasContainer.style.display = 'none';
+            canvasContainer.innerHTML = '';
+            fileInput.value = '';
+            processedImages = [];
+        }
+    </script>
+</body>
+</html>
