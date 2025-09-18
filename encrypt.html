@@ -256,6 +256,36 @@
         .nav-links a:hover {
             text-decoration: underline;
         }
+
+        .alternative-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .alternative-box h3 {
+            color: #856404;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .alternative-box ol {
+            color: #856404;
+            font-size: 14px;
+            line-height: 1.8;
+            margin-left: 20px;
+        }
+
+        .alternative-box a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+
+        .alternative-box a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -270,6 +300,17 @@
             <p style="margin-top: 10px;">Save this password! You'll need it to open the encrypted PDF.</p>
         </div>
 
+        <div class="alternative-box">
+            <h3>⚠️ Note: Browser-based encryption has limitations</h3>
+            <p style="margin-bottom: 15px;">For true PDF encryption, we recommend using one of these free alternatives:</p>
+            <ol>
+                <li><strong>Mac Users:</strong> Open PDF in Preview → File → Export → Check "Encrypt" → Enter password "swordfish"</li>
+                <li><strong>Windows Users:</strong> Use <a href="https://www.ilovepdf.com/protect-pdf" target="_blank">iLovePDF</a> (free online)</li>
+                <li><strong>Adobe Reader:</strong> File → Protect → Protect Using Password</li>
+                <li><strong>SmallPDF:</strong> Visit <a href="https://smallpdf.com/protect-pdf" target="_blank">smallpdf.com/protect-pdf</a></li>
+            </ol>
+        </div>
+
         <div class="upload-area" id="uploadArea">
             <div class="upload-icon">📄</div>
             <p class="upload-text">Drop your PDF here</p>
@@ -280,28 +321,28 @@
 
         <div class="processing" id="processing">
             <div class="spinner"></div>
-            <p>Encrypting your PDF...</p>
-            <p style="color: #999; margin-top: 10px; font-size: 14px;">Adding password protection</p>
+            <p>Processing your PDF...</p>
+            <p style="color: #999; margin-top: 10px; font-size: 14px;">Applying protection settings</p>
         </div>
 
         <div class="result" id="result">
             <div class="success-icon">✅</div>
-            <h3>PDF Successfully Encrypted!</h3>
+            <h3>PDF Ready for Download!</h3>
             <div class="file-info" id="fileInfo"></div>
             
-            <p style="color: #666; margin: 15px 0;">Your PDF is now password-protected</p>
+            <p style="color: #666; margin: 15px 0;">Your PDF has been processed</p>
             
-            <button class="download-button" id="downloadButton">⬇️ Download Encrypted PDF</button>
+            <button class="download-button" id="downloadButton">⬇️ Download PDF</button>
             
             <div class="warning-box">
                 <strong>⚠️ Important:</strong><br>
-                • Password: <strong>swordfish</strong><br>
-                • Keep this password safe - you'll need it to open the file<br>
-                • The encryption cannot be removed without the password
+                • This creates a copy with restricted permissions<br>
+                • For password-protected encryption, use the methods above<br>
+                • Password for full encryption: <strong>swordfish</strong>
             </div>
             
             <br>
-            <button class="reset-button" onclick="resetConverter()">Encrypt Another PDF</button>
+            <button class="reset-button" onclick="resetConverter()">Process Another PDF</button>
         </div>
 
         <div class="error" id="error">
@@ -311,13 +352,14 @@
         </div>
 
         <div class="nav-links">
+            <a href="home.html">Home</a>
             <a href="index.html">PDF to B&W</a>
             <a href="simple.html">Image Converter</a>
             <a href="encrypt.html">Encrypt PDF</a>
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script>
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
@@ -378,22 +420,25 @@
             try {
                 // Read the PDF file
                 const arrayBuffer = await file.arrayBuffer();
-                const pdfBytes = new Uint8Array(arrayBuffer);
                 
-                // Load the PDF
-                const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+                // Load the PDF with PDFLib
+                const { PDFDocument } = PDFLib;
+                const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
                 
-                // Encrypt the PDF with password "swordfish"
+                // Try to apply encryption settings
+                // Note: pdf-lib has limited encryption support in browser
+                // This will set permissions but won't add password encryption in browser context
                 const encryptedPdfBytes = await pdfDoc.save({
+                    useObjectStreams: false,
                     userPassword: 'swordfish',
                     ownerPassword: 'swordfish',
                     permissions: {
-                        printing: 'highResolution',
+                        printing: PDFLib.PDFPermissions.PrintHighQuality,
                         modifying: false,
                         copying: false,
                         annotating: false,
                         fillingForms: false,
-                        contentAccessibility: true,
+                        contentAccessibility: false,
                         documentAssembly: false
                     }
                 });
@@ -403,11 +448,11 @@
                 const url = URL.createObjectURL(blob);
                 
                 // Setup download
-                const encryptedFileName = originalFileName.replace('.pdf', '_encrypted.pdf');
+                const protectedFileName = originalFileName.replace('.pdf', '_protected.pdf');
                 downloadButton.onclick = () => {
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = encryptedFileName;
+                    a.download = protectedFileName;
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
@@ -417,9 +462,9 @@
                 const fileSize = (blob.size / 1024).toFixed(2);
                 fileInfo.innerHTML = `
                     <strong>Original:</strong> ${originalFileName}<br>
-                    <strong>Encrypted:</strong> ${encryptedFileName}<br>
+                    <strong>Protected:</strong> ${protectedFileName}<br>
                     <strong>Size:</strong> ${fileSize} KB<br>
-                    <strong>Protection:</strong> Password required to open
+                    <strong>Status:</strong> Permissions restricted (see note above for password encryption)
                 `;
                 
                 // Show result
@@ -431,7 +476,7 @@
                 if (err.message && err.message.includes('encrypted')) {
                     showError('This PDF is already encrypted. Please upload an unencrypted PDF.');
                 } else {
-                    showError(`Failed to encrypt PDF: ${err.message || 'Unknown error'}`);
+                    showError(`Failed to process PDF: ${err.message || 'Unknown error'}`);
                 }
             }
         }
