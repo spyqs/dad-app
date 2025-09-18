@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Password Protector</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 5px;
+        }
+
+        .info-box h3 {
+            color: #1976D2;
+            margin-bottom: 10px;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-box p {
+            color: #555;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .password-display {
+            background: #f5f5f5;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 16px;
+            color: #333;
+            border: 2px dashed #ddd;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .upload-area {
+            border: 3px dashed #ddd;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: #fafafa;
+            position: relative;
+        }
+
+        .upload-area:hover {
+            border-color: #2196F3;
+            background: #f0f7ff;
+        }
+
+        .upload-area.dragover {
+            border-color: #1976D2;
+            background: #e3f2fd;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            color: #2196F3;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .upload-button {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .upload-button:hover {
+            transform: translateY(-2px);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .processing {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #2196F3;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .success-icon {
+            font-size: 48px;
+            color: #4caf50;
+            margin-bottom: 15px;
+        }
+
+        .file-info {
+            background: #e8f4ea;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .download-button {
+            background: #4caf50;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .download-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .reset-button {
+            background: #666;
+            color: white;
+            padding: 10px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: transform 0.2s;
+        }
+
+        .reset-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .error {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .error-icon {
+            font-size: 48px;
+            color: #d32f2f;
+            margin-bottom: 15px;
+        }
+
+        .error-message {
+            color: #d32f2f;
+            margin-bottom: 20px;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #856404;
+            line-height: 1.5;
+        }
+
+        .nav-links {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .nav-links a {
+            color: #667eea;
+            text-decoration: none;
+            margin: 0 15px;
+            font-size: 14px;
+        }
+
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔒 PDF Password Protector</h1>
+        <p class="subtitle">Encrypt your PDF files with password protection</p>
+        
+        <div class="info-box">
+            <h3>🔐 Password Information</h3>
+            <p>Your PDF will be encrypted with the following password:</p>
+            <div class="password-display">swordfish</div>
+            <p style="margin-top: 10px;">Save this password! You'll need it to open the encrypted PDF.</p>
+        </div>
+
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📄</div>
+            <p class="upload-text">Drop your PDF here</p>
+            <p style="color: #999; margin: 10px 0;">or</p>
+            <button class="upload-button">Choose PDF File</button>
+            <input type="file" id="fileInput" accept="application/pdf">
+        </div>
+
+        <div class="processing" id="processing">
+            <div class="spinner"></div>
+            <p>Encrypting your PDF...</p>
+            <p style="color: #999; margin-top: 10px; font-size: 14px;">Adding password protection</p>
+        </div>
+
+        <div class="result" id="result">
+            <div class="success-icon">✅</div>
+            <h3>PDF Successfully Encrypted!</h3>
+            <div class="file-info" id="fileInfo"></div>
+            
+            <p style="color: #666; margin: 15px 0;">Your PDF is now password-protected</p>
+            
+            <button class="download-button" id="downloadButton">⬇️ Download Encrypted PDF</button>
+            
+            <div class="warning-box">
+                <strong>⚠️ Important:</strong><br>
+                • Password: <strong>swordfish</strong><br>
+                • Keep this password safe - you'll need it to open the file<br>
+                • The encryption cannot be removed without the password
+            </div>
+            
+            <br>
+            <button class="reset-button" onclick="resetConverter()">Encrypt Another PDF</button>
+        </div>
+
+        <div class="error" id="error">
+            <div class="error-icon">⚠️</div>
+            <p class="error-message" id="errorMessage">An error occurred while processing your PDF.</p>
+            <button class="reset-button" onclick="resetConverter()">Try Again</button>
+        </div>
+
+        <div class="nav-links">
+            <a href="index.html">PDF to B&W</a>
+            <a href="simple.html">Image Converter</a>
+            <a href="encrypt.html">Encrypt PDF</a>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const processing = document.getElementById('processing');
+        const result = document.getElementById('result');
+        const error = document.getElementById('error');
+        const errorMessage = document.getElementById('errorMessage');
+        const downloadButton = document.getElementById('downloadButton');
+        const fileInfo = document.getElementById('fileInfo');
+
+        let originalFileName = '';
+
+        // Click to upload
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file && file.type === 'application/pdf') {
+                originalFileName = file.name;
+                processPDF(file);
+            } else if (file) {
+                showError('Please select a PDF file.');
+            }
+        });
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const file = e.dataTransfer.files[0];
+            if (file && file.type === 'application/pdf') {
+                originalFileName = file.name;
+                processPDF(file);
+            } else if (file) {
+                showError('Please drop a PDF file.');
+            }
+        });
+
+        async function processPDF(file) {
+            uploadArea.style.display = 'none';
+            processing.style.display = 'block';
+            error.style.display = 'none';
+            result.style.display = 'none';
+
+            try {
+                // Read the PDF file
+                const arrayBuffer = await file.arrayBuffer();
+                const pdfBytes = new Uint8Array(arrayBuffer);
+                
+                // Load the PDF
+                const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+                
+                // Encrypt the PDF with password "swordfish"
+                const encryptedPdfBytes = await pdfDoc.save({
+                    userPassword: 'swordfish',
+                    ownerPassword: 'swordfish',
+                    permissions: {
+                        printing: 'highResolution',
+                        modifying: false,
+                        copying: false,
+                        annotating: false,
+                        fillingForms: false,
+                        contentAccessibility: true,
+                        documentAssembly: false
+                    }
+                });
+                
+                // Create blob for download
+                const blob = new Blob([encryptedPdfBytes], { type: 'application/pdf' });
+                const url = URL.createObjectURL(blob);
+                
+                // Setup download
+                const encryptedFileName = originalFileName.replace('.pdf', '_encrypted.pdf');
+                downloadButton.onclick = () => {
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = encryptedFileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                };
+                
+                // Display file info
+                const fileSize = (blob.size / 1024).toFixed(2);
+                fileInfo.innerHTML = `
+                    <strong>Original:</strong> ${originalFileName}<br>
+                    <strong>Encrypted:</strong> ${encryptedFileName}<br>
+                    <strong>Size:</strong> ${fileSize} KB<br>
+                    <strong>Protection:</strong> Password required to open
+                `;
+                
+                // Show result
+                processing.style.display = 'none';
+                result.style.display = 'block';
+                
+            } catch (err) {
+                console.error('Error:', err);
+                if (err.message && err.message.includes('encrypted')) {
+                    showError('This PDF is already encrypted. Please upload an unencrypted PDF.');
+                } else {
+                    showError(`Failed to encrypt PDF: ${err.message || 'Unknown error'}`);
+                }
+            }
+        }
+
+        function showError(message) {
+            uploadArea.style.display = 'none';
+            processing.style.display = 'none';
+            result.style.display = 'none';
+            error.style.display = 'block';
+            errorMessage.textContent = message;
+        }
+
+        function resetConverter() {
+            uploadArea.style.display = 'block';
+            processing.style.display = 'none';
+            result.style.display = 'none';
+            error.style.display = 'none';
+            fileInput.value = '';
+            
+            // Clean up the download URL
+            if (downloadButton.onclick) {
+                const a = document.createElement('a');
+                if (a.href && a.href.startsWith('blob:')) {
+                    URL.revokeObjectURL(a.href);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
